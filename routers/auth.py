@@ -26,6 +26,7 @@ class User_Request(BaseModel):
     first_name: str
     last_name: str
     phone_number: str
+    role: str
 
 
 def get_db():
@@ -48,6 +49,7 @@ async def create_user(db: db_dependency, user_request: User_Request):
         first_name=user_request.first_name,
         last_name=user_request.last_name,
         phone_number=user_request.phone_number,
+        role = user_request.role,
     )
     db.add(create_user_model)
     db.commit()
@@ -102,3 +104,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
         )
     token = create_access_token(user_model.username, user_model.id, timedelta(minutes=20))
     return {"access_token": token, "token_type": "bearer"}
+
+
+
+

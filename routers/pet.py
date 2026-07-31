@@ -27,24 +27,55 @@ class Pet_Req(BaseModel):
     color: str
 
 
+# Read your pet info
 @router.get("/read_pet_info", status_code=status.HTTP_200_OK)
-async def read_pet_info(user: user_dependency, db: db_dependency):
-    if user is None:
+async def read_pet_info(current_user: user_dependency, db: db_dependency):
+    if current_user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    pet_model = db.query(pet).filter(pet.owner_id == user.get("id")).all()
+    pet_model = db.query(pet).filter(pet.owner_id == current_user.get("id")).all()
     return pet_model
 
 
+# Create a new pet (one per user)
 @router.post("/creat_pet", status_code=status.HTTP_201_CREATED)
-async def create_pet(user: user_dependency, db: db_dependency, pet_req: Pet_Req):
-    if user is None:
+async def create_pet(current_user: user_dependency, db: db_dependency, pet_req: Pet_Req):
+    if current_user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    existing_pet = db.query(pet).filter(pet.owner_id == current_user.get("id")).first()
+    if existing_pet:
+        raise HTTPException(status_code=400, detail="You already have a pet")
+
     pet_model = pet(**pet_req.model_dump())
-    pet_model.owner_id = user.get("id")
+    pet_model.owner_id = current_user.get("id")
     db.add(pet_model)
     db.commit()
 
 
-@router.put("/pet_info", status_code=status.HTTP_200_OK)
-async def update_pet(pet_req: Pet_Req, db: db_dependency):
-    pass
+# Update your pet's info
+@router.put("/edit_pet_info", status_code=status.HTTP_200_OK)
+async def update_pet(pet_req: Pet_Req, db: db_dependency, current_user: user_dependency):
+    if current_user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    pet_model = db.query(pet).filter(pet.owner_id == current_user.get("id")).first()
+
+    if pet_model is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    pet_model.name = pet_req.name
+    pet_model.description = pet_req.description
+    pet_model.color = pet_req.color
+    db.commit()
+
+
+# Delete your pet
+@router.delete("/delete", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_pet(current_user: user_dependency, db: db_dependency):
+    if current_user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    pet_model = db.query(pet).filter(pet.owner_id == current_user.get("id")).first()
+    if pet_model is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    db.delete(pet_model)
+    db.commit()
