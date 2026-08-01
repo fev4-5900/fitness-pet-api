@@ -1,7 +1,5 @@
 from database import Base
-from sqlalchemy import Column, Integer, ForeignKey, Boolean, String, Float
-from datetime import datetime
-
+from sqlalchemy import Column, Integer, ForeignKey, Boolean, String, Float, DateTime, Date
 class pet(Base):
     __tablename__ = 'pet'
     id = Column(Integer, primary_key=True)
@@ -53,34 +51,45 @@ class user_targets(Base):
 class meals(Base):
     __tablename__ = 'meals'
     id = Column(Integer, primary_key=True)
-    owner_id = Column(Integer, ForeignKey('user.id'), unique=True)
+    owner_id = Column(Integer, ForeignKey('user.id'))
     calories = Column(Integer)
     proteins = Column(Integer)
     carbs = Column(Integer)
     fats = Column(Integer)
-    date = Column(datetime.day)
+    date = Column(Date)
+
+
+class exercise(Base):
+    __tablename__ = 'exercise'
+    id = Column(Integer, primary_key=True)
+    owner_id = Column(Integer, ForeignKey('user.id'))
+    exercise_type = Column(String)
+    duration = Column(Integer)
+    calories_burned = Column(Integer)
+    date = Column(Date)
 
 
 class water(Base):
     __tablename__ = 'water'
     id = Column(Integer, primary_key=True)
-    owner_id = Column(Integer, ForeignKey('user.id'), unique=True)
-    liters = Column(float)
+    owner_id = Column(Integer, ForeignKey('user.id'))
+    liters = Column(Float)
+    date = Column(Date)
 
 
 class sleep_hours(Base):
     __tablename__ = 'sleep_hours'
     id = Column(Integer, primary_key=True)
-    owner_id = Column(Integer, ForeignKey('user.id'), unique=True)
+    owner_id = Column(Integer, ForeignKey('user.id'))
     sleep_hours = Column(Float)
-    date = Column(datetime.day)
+    date = Column(Date)
 
 class steps(Base):
     __tablename__ = 'steps'
     id = Column(Integer, primary_key=True)
-    owner_id = Column(Integer, ForeignKey('user.id'), unique=True)
+    owner_id = Column(Integer, ForeignKey('user.id'))
     steps = Column(Integer)
-    date = Column(datetime.day)
+    date = Column(Date)
 
 
 
