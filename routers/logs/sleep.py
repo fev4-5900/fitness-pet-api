@@ -4,7 +4,7 @@ from models import pet, user, user_targets, sleep_hours
 from database import engine, SessionLocal
 from typing import Annotated
 from sqlalchemy.orm import Session, query
-from .auth import get_current_user
+from routers.auth import get_current_user
 from datetime import date
 router = APIRouter(
     prefix="/sleep",
@@ -23,10 +23,12 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
+# Body expected when logging sleep (date is set by the server)
 class Sleep_Request(BaseModel):
     sleep_hours :float
 
 
+# All sleep entries ever logged by this user
 @router.get("/read_all_sleep")
 async def read_all_sleep(db:db_dependency, current_user: user_dependency):
     if current_user is None:
@@ -34,6 +36,7 @@ async def read_all_sleep(db:db_dependency, current_user: user_dependency):
     return db.query(sleep_hours).filter_by(owner_id = current_user.get("id")).all()
 
 
+# Only today's sleep entries
 @router.get("/read_today_sleep")
 async def read_today_sleep(db:db_dependency,current_user:user_dependency):
     if current_user is None:
@@ -42,6 +45,7 @@ async def read_today_sleep(db:db_dependency,current_user:user_dependency):
     today = date.today()
     return db.query(sleep_hours).filter(sleep_hours.owner_id == current_user.get("id"),sleep_hours.date == today,).all()
 
+# Read one specific entry (only if it belongs to this user)
 @router.get("/read_sleep/{sleep_id}")
 async def read_sleep_by_id(db:db_dependency, current_user: user_dependency, sleep_id:int):
     if current_user is None:
@@ -51,6 +55,7 @@ async def read_sleep_by_id(db:db_dependency, current_user: user_dependency, slee
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sleep not found")
     return sleep_model
 
+# Total sleep hours recorded today
 @router.get("/today_totals")
 async def read_today_totals(db: db_dependency, current_user: user_dependency):
     if current_user is None:
@@ -62,6 +67,7 @@ async def read_today_totals(db: db_dependency, current_user: user_dependency):
         "sleep_hours": sum(s.sleep_hours or 0 for s in rows),
     }
 
+# Add a new sleep entry for today
 @router.post("/log_sleep")
 async def log_sleep(db:db_dependency,current_user:user_dependency, sleep_request:Sleep_Request):
     if current_user is None:
@@ -74,6 +80,7 @@ async def log_sleep(db:db_dependency,current_user:user_dependency, sleep_request
     db.add(sleep_model)
     db.commit()
 
+# Remove an entry (only if it belongs to this user)
 @router.delete("/delete_sleep/{sleep_id}")
 async def delete_sleep(db: db_dependency, current_user: user_dependency, sleep_id: int):
     if current_user is None:

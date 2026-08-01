@@ -17,12 +17,14 @@ def get_db():
         db.close()
 
 
+# db_dependency opens a fresh DB session per request
+# user_dependency resolves the logged-in user from the token
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
 
 class Pet_Req(BaseModel):
-    name: str = Field(min_length=3, max_length=50)
+    name: str = Field(min_length=3, max_length=50)  # pet name validation
     description: str = Field(max_length=300)
     color: str
 

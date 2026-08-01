@@ -1,9 +1,12 @@
 from database import Base
 from sqlalchemy import Column, Integer, ForeignKey, Boolean, String, Float, DateTime, Date
+
+
+# The user's virtual pet (one pet per user)
 class pet(Base):
     __tablename__ = 'pet'
     id = Column(Integer, primary_key=True)
-    owner_id = Column(Integer, ForeignKey('user.id'), unique=True)
+    owner_id = Column(Integer, ForeignKey('user.id'), unique=True)  # one pet per user
     name = Column(String)
     description = Column(String)
     color = Column(String)
@@ -13,31 +16,31 @@ class pet(Base):
     exercise = Column(Boolean, default=False)
 
 
-
+# Registered users + their fitness profile
 class user(Base):
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
     first_name = Column(String)
     last_name = Column(String)
-    email = Column(String(100),unique=True)
-    hashed_password = Column(String(100))
-    username = Column(String(100),unique=True)
+    email = Column(String(100), unique=True)
+    hashed_password = Column(String(100))  # never store plain passwords
+    username = Column(String(100), unique=True)
     phone_number = Column(String(100))
     role = Column(String(100))
 
+    # Fitness profile used by the targets calculator
     gender = Column(String(100))
     height = Column(Float)
     weight = Column(Float)
     age = Column(Integer)
-    activity = Column(Integer)
-    goal = Column(String(100))
+    activity = Column(Integer)  # training days per week (0-7)
+    goal = Column(String(100))  # lose / maintain / gain
 
 
-
+# The user's saved daily targets (one row per user, updated not duplicated)
 class user_targets(Base):
     __tablename__ = 'user_targets'
-
 
     id = Column(Integer, primary_key=True)
     owner_id = Column(Integer, ForeignKey('user.id'), unique=True)
@@ -48,6 +51,8 @@ class user_targets(Base):
     sleep_hours = Column(Integer)
     steps = Column(Integer)
 
+
+# One row = one logged meal. Many rows per user, grouped by date.
 class meals(Base):
     __tablename__ = 'meals'
     id = Column(Integer, primary_key=True)
@@ -56,19 +61,21 @@ class meals(Base):
     proteins = Column(Integer)
     carbs = Column(Integer)
     fats = Column(Integer)
-    date = Column(Date)
+    date = Column(Date)  # day the meal was eaten
 
 
+# One row = one exercise session
 class exercise(Base):
     __tablename__ = 'exercise'
     id = Column(Integer, primary_key=True)
     owner_id = Column(Integer, ForeignKey('user.id'))
     exercise_type = Column(String)
-    duration = Column(Integer)
+    duration = Column(Integer)  # minutes
     calories_burned = Column(Integer)
     date = Column(Date)
 
 
+# One row = one glass/cup of water (in liters)
 class water(Base):
     __tablename__ = 'water'
     id = Column(Integer, primary_key=True)
@@ -77,6 +84,7 @@ class water(Base):
     date = Column(Date)
 
 
+# One row = one night of sleep
 class sleep_hours(Base):
     __tablename__ = 'sleep_hours'
     id = Column(Integer, primary_key=True)
@@ -84,14 +92,11 @@ class sleep_hours(Base):
     sleep_hours = Column(Float)
     date = Column(Date)
 
+
+# One row = one steps update
 class steps(Base):
     __tablename__ = 'steps'
     id = Column(Integer, primary_key=True)
     owner_id = Column(Integer, ForeignKey('user.id'))
     steps = Column(Integer)
     date = Column(Date)
-
-
-
-
-

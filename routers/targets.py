@@ -4,7 +4,7 @@ from models import pet, user, user_targets
 from database import engine, SessionLocal
 from typing import Annotated
 from sqlalchemy.orm import Session, query
-from .auth import get_current_user
+from routers.auth import get_current_user
 
 router = APIRouter(prefix="/targets", tags=["targets"])
 
@@ -20,6 +20,7 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 
 
+# Body expected when saving the user's final targets
 class Targets_Request(BaseModel):
     calories: int
     proteins: float
@@ -51,7 +52,6 @@ async def recommended_targets(db: db_dependency, current_user: user_dependency):
     else:
         bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age - 161
 
-    # Match common calorie apps: assume sedentary baseline, small adjustments
     multiplier = 1.2
     tdee = bmr * multiplier
 
@@ -80,6 +80,7 @@ async def recommended_targets(db: db_dependency, current_user: user_dependency):
 
 
 
+# Read the user's saved targets
 @router.get("/read_targets", status_code=status.HTTP_200_OK)
 async def read_targets(db:db_dependency, current_user:user_dependency):
     if current_user is None:
@@ -92,6 +93,7 @@ async def read_targets(db:db_dependency, current_user:user_dependency):
 
 
 
+# Save the user's targets (creates the row if it doesn't exist yet)
 @router.post("/add_targets", status_code=status.HTTP_200_OK)
 async def add_targets(db:db_dependency, current_user:user_dependency,target_request:Targets_Request):
     if current_user is None:

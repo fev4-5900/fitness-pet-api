@@ -12,13 +12,17 @@ from models import user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# Used to sign and verify JWT tokens (keep secret in real apps)
 SECRET_KEY = "f6837ff897fc7e8eb1746c32699f43b9"
 ALGORITHM = "HS256"
 
+# Tells FastAPI where to send the login form (used for Swagger docs)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+# Handles password hashing/verifying with bcrypt
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+# Body expected when registering a new user
 class User_Request(BaseModel):
     username: str
     email: str
@@ -40,6 +44,7 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 
 
+# Register a new account (hashes the password before storing it)
 @router.post("/creat_user", status_code=status.HTTP_201_CREATED)
 async def create_user(db: db_dependency, user_request: User_Request):
     create_user_model = user(
@@ -55,6 +60,7 @@ async def create_user(db: db_dependency, user_request: User_Request):
     db.commit()
 
 
+# Check that the username exists and the password matches its hash
 def authenticate_user(username: str, password: str, db):
     user_model = db.query(user).filter_by(username=username).first()
     if not user_model:
@@ -64,17 +70,20 @@ def authenticate_user(username: str, password: str, db):
     return user_model
 
 
+# Shape of the login response
 class Token(BaseModel):
     access_token: str
     token_type: str
 
 
+# Build a signed JWT containing the username, user id, and expiry time
 def create_access_token(username: str, user_id: int, expires_delta: timedelta):
     expires = datetime.now(timezone.utc) + expires_delta
     encode = {"sub": username, "id": user_id, "exp": expires}
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
+# Dependency used by every protected endpoint to read the logged-in user
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -94,6 +103,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         )
 
 
+# Login: receives username/password form, returns a bearer token
 @router.post("/token", response_model=Token, status_code=status.HTTP_200_OK)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],db: db_dependency,):
     user_model = authenticate_user(form_data.username, form_data.password, db)
@@ -104,7 +114,3 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
         )
     token = create_access_token(user_model.username, user_model.id, timedelta(minutes=20))
     return {"access_token": token, "token_type": "bearer"}
-
-
-
-
