@@ -124,7 +124,7 @@ async def read_total_points_and_level(db: db_dependency, current_user: user_depe
 
     total = db.query(overall_points).filter(overall_points.owner_id == current_user.get("id")).first()
 
-    level = calculate_level(total.overall_points)
+    level = calculate_level(total.overall_points if total else 0)
 
     return {"total_points": total.overall_points if total else 0, "level":level}
 

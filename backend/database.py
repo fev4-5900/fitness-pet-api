@@ -2,11 +2,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-# Path to the SQLite database file (created automatically in this folder)
-sqlalchemy_database_url = "sqlite:///./fitness-pet.db"
+from config import DATABASE_URL
 
-# SQLite needs check_same_thread=False because FastAPI uses multiple threads
-engine = create_engine(sqlalchemy_database_url, connect_args={"check_same_thread": False})
+# SQLite needs check_same_thread=False because FastAPI uses multiple threads;
+# PostgreSQL/other drivers don't need any special connect args.
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 
 # SessionLocal is the factory used to open a new DB session for each request
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)

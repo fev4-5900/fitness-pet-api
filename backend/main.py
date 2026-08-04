@@ -1,4 +1,7 @@
+from pathlib import Path
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from database import engine, Base
 from routers import pet, auth, user, targets, points
 from routers.logs import water, sleep, meals, steps
@@ -19,3 +22,14 @@ app.include_router(meals.router)
 app.include_router(sleep.router)
 app.include_router(water.router)
 app.include_router(steps.router)
+
+# Serve the built React app (frontend/dist) from the same server in production.
+# In development the Vite dev server (port 5173) proxies /api to this backend,
+# so the app works both ways without any CORS setup.
+FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if FRONTEND_DIST.exists():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        return FileResponse(FRONTEND_DIST / "index.html")

@@ -1,5 +1,6 @@
 from datetime import timedelta, timezone, datetime
 from jose import jwt, JWTError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import Annotated
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
@@ -7,13 +8,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from passlib.context import CryptContext
 
+from config import SECRET_KEY
 from database import SessionLocal
 from models import user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# Used to sign and verify JWT tokens (keep secret in real apps)
-SECRET_KEY = "f6837ff897fc7e8eb1746c32699f43b9"
 ALGORITHM = "HS256"
 
 # Tells FastAPI where to send the login form (used for Swagger docs)
@@ -24,13 +24,13 @@ bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Body expected when registering a new user
 class User_Request(BaseModel):
-    username: str
-    email: str
-    password: str
-    first_name: str
-    last_name: str
-    phone_number: str
-    role: str
+    username: str = Field(min_length=3, max_length=50)
+    email: str = Field(min_length=3, max_length=100)
+    password: str = Field(min_length=6)
+    first_name: str = Field(min_length=1)
+    last_name: str = Field(min_length=1)
+    phone_number: str = Field(max_length=100)
+    role: str = Field(default="user", max_length=50)
 
 
 def get_db():
@@ -56,8 +56,15 @@ async def create_user(db: db_dependency, user_request: User_Request):
         phone_number=user_request.phone_number,
         role = user_request.role,
     )
-    db.add(create_user_model)
-    db.commit()
+    try:
+        db.add(create_user_model)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username or email already taken",
+        )
 
 
 # Check that the username exists and the password matches its hash
