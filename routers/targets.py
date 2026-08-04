@@ -28,6 +28,7 @@ class Targets_Request(BaseModel):
     fats: float
     sleep_hours:float
     steps: int
+    water: float
 
 
 
@@ -69,6 +70,9 @@ async def recommended_targets(db: db_dependency, current_user: user_dependency):
     fats = calories * 0.25 / 9
     carbs = (calories - (proteins * 4 + fats * 9)) / 4
 
+    # Water goal (gender-based daily recommendation)
+    water = 3.0 if gender == "male" else 2.2
+
     return {
         "calories": round(calories),
         "proteins": round(proteins),
@@ -76,6 +80,7 @@ async def recommended_targets(db: db_dependency, current_user: user_dependency):
         "fats": round(fats),
         "sleep_hours": 8,
         "steps": 10000,
+        "water": water,
     }
 
 
@@ -110,6 +115,7 @@ async def add_targets(db:db_dependency, current_user:user_dependency,target_requ
     targets_model.fats = target_request.fats
     targets_model.sleep_hours = target_request.sleep_hours
     targets_model.steps = target_request.steps
+    targets_model.water = target_request.water
     
     db.add(targets_model)
     db.commit()

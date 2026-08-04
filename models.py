@@ -50,6 +50,7 @@ class user_targets(Base):
     fats = Column(Integer)
     sleep_hours = Column(Integer)
     steps = Column(Integer)
+    water = Column(Float)  # daily water goal in liters
 
 
 # One row = one logged meal. Many rows per user, grouped by date.
@@ -62,17 +63,6 @@ class meals(Base):
     carbs = Column(Integer)
     fats = Column(Integer)
     date = Column(Date)  # day the meal was eaten
-
-
-# One row = one exercise session
-class exercise(Base):
-    __tablename__ = 'exercise'
-    id = Column(Integer, primary_key=True)
-    owner_id = Column(Integer, ForeignKey('user.id'))
-    exercise_type = Column(String)
-    duration = Column(Integer)  # minutes
-    calories_burned = Column(Integer)
-    date = Column(Date)
 
 
 # One row = one glass/cup of water (in liters)
@@ -100,3 +90,12 @@ class steps(Base):
     owner_id = Column(Integer, ForeignKey('user.id'))
     steps = Column(Integer)
     date = Column(Date)
+
+
+# The user's running lifetime score, incremented when a log earns points
+class overall_points(Base):
+    __tablename__ = 'overall_points'
+    id = Column(Integer, primary_key=True)
+    owner_id = Column(Integer, ForeignKey('user.id'), unique=True)
+    overall_points = Column(Integer)
+

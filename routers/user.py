@@ -49,3 +49,12 @@ async def edit_profile(db: db_dependency, current_user: user_dependency, profile
 
     db.add(profile_model)
     db.commit()
+
+@router.get("/profile", status_code=status.HTTP_200_OK)
+async def read_profile(current_user: user_dependency, db: db_dependency):
+    if current_user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    profile_model= db.query(user).filter_by(id=current_user.get("id")).first()
+
+    return {"gender":profile_model.gender, "height" :profile_model.height, "weight":profile_model.weight,
+            "age":profile_model.age, "goal":profile_model.goal, "activity":profile_model.activity}

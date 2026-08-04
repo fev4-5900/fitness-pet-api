@@ -8,9 +8,10 @@ from database import engine, SessionLocal
 from typing import Annotated
 from sqlalchemy.orm import Session, query
 from routers.auth import get_current_user
+from routers.points import calculate_daily_points, sync_total_after_log
 from datetime import date
 router = APIRouter(
-    prefix="/meals",
+    prefix="/meals", tags=["meals"]
 )
 
 
@@ -52,8 +53,8 @@ async def read_today_meals(db:db_dependency,current_user:user_dependency):
     return db.query(meals).filter(meals.owner_id == current_user.get("id"),meals.date == today,).all()
 
 # Read one specific meal (only if it belongs to this user)
-@router.get("/read_meals/{meal_id}")
-async def read_meals_by_id(db:db_dependency, current_user: user_dependency, meal_id:int):
+@router.get("/read_meal/{meal_id}")
+async def read_meal_by_id(db:db_dependency, current_user: user_dependency, meal_id:int):
     if current_user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,)
     meal_model = db.query(meals).filter(meals.id == meal_id, meals.owner_id == current_user.get("id")).first()
@@ -62,8 +63,8 @@ async def read_meals_by_id(db:db_dependency, current_user: user_dependency, meal
     return meal_model
 
 # Sum of today's meals - what the UI compares against the daily targets
-@router.get("/today_totals")
-async def read_today_totals(db: db_dependency, current_user: user_dependency):
+@router.get("/today_total_macros")
+async def read_today_total_macros(db: db_dependency, current_user: user_dependency):
     if current_user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,)
 
@@ -81,6 +82,9 @@ async def read_today_totals(db: db_dependency, current_user: user_dependency):
 async def log_meals(db:db_dependency,current_user:user_dependency, meals_request:Meals_Request):
     if current_user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,)
+    # Today's score before this meal (to add only the change to the total)
+    old_today = calculate_daily_points(db, current_user.get("id"), date.today())["points"]
+
     meal_model = meals(**meals_request.model_dump())
     meal_model.owner_id = current_user.get("id")
     meal_model.date = date.today()
@@ -88,6 +92,9 @@ async def log_meals(db:db_dependency,current_user:user_dependency, meals_request
 
     db.add(meal_model)
     db.commit()
+
+    # Add the gained points (delta) to the lifetime total
+    sync_total_after_log(db, current_user.get("id"), old_today)
 
 # Remove a meal (only if it belongs to this user)
 @router.delete("/delete_meal/{meal_id}")

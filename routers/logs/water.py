@@ -5,9 +5,10 @@ from database import engine, SessionLocal
 from typing import Annotated
 from sqlalchemy.orm import Session, query
 from routers.auth import get_current_user
+from routers.points import calculate_daily_points, sync_total_after_log
 from datetime import date
 router = APIRouter(
-    prefix="/water",
+    prefix="/water", tags=["water"]
 )
 
 
@@ -56,8 +57,8 @@ async def read_water_by_id(db:db_dependency, current_user: user_dependency, wate
     return water_model
 
 # Total liters recorded today
-@router.get("/today_totals")
-async def read_today_totals(db: db_dependency, current_user: user_dependency):
+@router.get("/today_totals_liters")
+async def read_today_total_liters(db: db_dependency, current_user: user_dependency):
     if current_user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,)
 
@@ -72,6 +73,9 @@ async def read_today_totals(db: db_dependency, current_user: user_dependency):
 async def log_water(db:db_dependency,current_user:user_dependency, water_request:Water_Request):
     if current_user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,)
+    # Today's score before this entry (to add only the change to the total)
+    old_today = calculate_daily_points(db, current_user.get("id"), date.today())["points"]
+
     water_model = water(**water_request.model_dump())
     water_model.owner_id = current_user.get("id")
     water_model.date = date.today()
@@ -79,6 +83,9 @@ async def log_water(db:db_dependency,current_user:user_dependency, water_request
 
     db.add(water_model)
     db.commit()
+
+    # Add the gained points (delta) to the lifetime total
+    sync_total_after_log(db, current_user.get("id"), old_today)
 
 # Remove an entry (only if it belongs to this user)
 @router.delete("/delete_water/{water_id}")

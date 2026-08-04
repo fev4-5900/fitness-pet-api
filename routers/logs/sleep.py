@@ -5,9 +5,10 @@ from database import engine, SessionLocal
 from typing import Annotated
 from sqlalchemy.orm import Session, query
 from routers.auth import get_current_user
+from routers.points import calculate_daily_points, sync_total_after_log
 from datetime import date
 router = APIRouter(
-    prefix="/sleep",
+    prefix="/sleep", tags=["sleep"]
 )
 
 
@@ -72,6 +73,9 @@ async def read_today_totals(db: db_dependency, current_user: user_dependency):
 async def log_sleep(db:db_dependency,current_user:user_dependency, sleep_request:Sleep_Request):
     if current_user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,)
+    # Today's score before this entry (to add only the change to the total)
+    old_today = calculate_daily_points(db, current_user.get("id"), date.today())["points"]
+
     sleep_model = sleep_hours(**sleep_request.model_dump())
     sleep_model.owner_id = current_user.get("id")
     sleep_model.date = date.today()
@@ -79,6 +83,9 @@ async def log_sleep(db:db_dependency,current_user:user_dependency, sleep_request
 
     db.add(sleep_model)
     db.commit()
+
+    # Add the gained points (delta) to the lifetime total
+    sync_total_after_log(db, current_user.get("id"), old_today)
 
 # Remove an entry (only if it belongs to this user)
 @router.delete("/delete_sleep/{sleep_id}")
