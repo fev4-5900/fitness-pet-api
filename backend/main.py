@@ -8,9 +8,19 @@ from fastapi.staticfiles import StaticFiles
 from database import engine, Base
 from routers import pet, auth, user, targets, points
 from routers.logs import water, sleep, meals, steps
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
 
 # Create the FastAPI app (the main entry point of the API)
 app = FastAPI()
+
+# Rate limiting - blocks brute-force password guessing on the login endpoint.
+# Keyed by the visitor's IP address.
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Create all database tables that don't exist yet (pet, user, targets, logs...)
 Base.metadata.create_all(bind=engine)

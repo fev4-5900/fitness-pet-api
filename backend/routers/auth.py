@@ -1,7 +1,10 @@
 # Authentication: user registration, login, and JWT token handling.
 # Every protected endpoint uses get_current_user to resolve the logged-in user.
 from datetime import timedelta, timezone, datetime
+from fastapi import Request
 from jose import jwt, JWTError
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import Annotated
@@ -15,6 +18,10 @@ from database import SessionLocal
 from models import user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Limits how fast the login endpoint can be hit from one IP address,
+# which makes brute-force password guessing impractical.
+limiter = Limiter(key_func=get_remote_address)
 
 ALGORITHM = "HS256"
 
@@ -112,9 +119,11 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         )
 
 
-# Login: receives username/password form, returns a bearer token
+# Login: receives username/password form, returns a bearer token.
+# Rate-limited to 5 attempts/minute per IP to stop brute-force guessing.
 @router.post("/token", response_model=Token, status_code=status.HTTP_200_OK)
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],db: db_dependency,):
+@limiter.limit("5/minute")
+async def login_for_access_token(request: Request, form_data: Annotated[OAuth2PasswordRequestForm, Depends()],db: db_dependency,):
     user_model = authenticate_user(form_data.username, form_data.password, db)
     if not user_model:
         raise HTTPException(
