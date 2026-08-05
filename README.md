@@ -1,6 +1,8 @@
 # FitPet
 
-A gamified fitness companion **backend API** — the kind of project that turns daily fitness habits (meals, water, sleep, steps) into a game where your pixel-art pet grows as you hit your targets.
+[![Live](https://img.shields.io/badge/live-https%3A%2F%2Ffitness-pet-api.onrender.com-2ea44f)](https://fitness-pet-api.onrender.com)
+
+A gamified fitness companion **backend API** — the kind of project that turns daily fitness habits (meals, water, sleep, steps) into a game where your pixel-art pet grows as you hit your targets. Try it live: **https://fitness-pet-api.onrender.com**
 
 **This is primarily a backend project.** The FastAPI backend (auth, database, scoring engine, target calculator, logging API) is hand-built. A lightweight React frontend was added with the help of AI simply to showcase and exercise the API — the logic and data lives in the backend.
 
