@@ -1,3 +1,5 @@
+# Endpoints for the user's fitness profile (height, weight, goal...).
+# These values feed the targets calculator in routers/targets.py.
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from pydantic import BaseModel, Field
 from models import user
@@ -56,5 +58,6 @@ async def read_profile(current_user: user_dependency, db: db_dependency):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     profile_model= db.query(user).filter_by(id=current_user.get("id")).first()
 
+    # Return only the fitness fields (the UI uses these to show/edit the profile)
     return {"gender":profile_model.gender, "height" :profile_model.height, "weight":profile_model.weight,
             "age":profile_model.age, "goal":profile_model.goal, "activity":profile_model.activity}

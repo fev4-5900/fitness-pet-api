@@ -1,3 +1,5 @@
+# Points system: scores one day's logs against the targets (out of 100),
+# tracks the pet's mood, and accumulates lifetime points for leveling up.
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from pydantic import BaseModel, Field
 from models import pet, user, user_targets, meals, sleep_hours, steps, water, overall_points
@@ -30,6 +32,7 @@ POINTS = {
 }
 
 
+# Map lifetime points to a level (level 1 starts at 0, max level is 10)
 def calculate_level(total_points: int) -> int:
     thresholds = [500, 1000, 2000, 3000, 5000, 7500, 10000, 12500, 15000]
 

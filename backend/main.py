@@ -1,3 +1,6 @@
+# FastAPI app entry point.
+# Registers every router and, when the frontend has been built,
+# serves the React app from frontend/dist on the same server.
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse

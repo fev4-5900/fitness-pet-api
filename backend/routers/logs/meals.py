@@ -1,3 +1,5 @@
+# Meal logging: record, read and delete meals.
+# Every meal is stamped with today's date by the server.
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from pip._internal.utils import datetime
 from pydantic import BaseModel, Field

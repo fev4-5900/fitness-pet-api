@@ -1,3 +1,5 @@
+# Sleep logging: record, read and delete sleep entries (in hours).
+# Every entry is stamped with today's date by the server.
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from pydantic import BaseModel, Field
 from models import pet, user, user_targets, sleep_hours

@@ -1,3 +1,5 @@
+# Authentication: user registration, login, and JWT token handling.
+# Every protected endpoint uses get_current_user to resolve the logged-in user.
 from datetime import timedelta, timezone, datetime
 from jose import jwt, JWTError
 from sqlalchemy.exc import IntegrityError

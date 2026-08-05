@@ -1,3 +1,6 @@
+# Sets up the SQLAlchemy engine and session factory used by every router.
+# Local development uses SQLite; production can point at PostgreSQL
+# through the DATABASE_URL environment variable.
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base

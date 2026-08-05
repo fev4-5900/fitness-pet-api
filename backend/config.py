@@ -1,3 +1,6 @@
+# Loads app configuration from environment variables.
+# In development it reads backend/.env; in production the hosting
+# provider supplies the variables directly.
 import os
 from dotenv import load_dotenv
 

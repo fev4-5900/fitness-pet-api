@@ -1,3 +1,5 @@
+# Water logging: record, read and delete water entries (in liters).
+# Every entry is stamped with today's date by the server.
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from pydantic import BaseModel, Field
 from models import pet, user, user_targets, water

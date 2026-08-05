@@ -1,3 +1,5 @@
+# Daily targets: science-based recommendations (from the user's profile)
+# plus the endpoints to read and save the user's chosen targets.
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from pydantic import BaseModel, Field
 from models import pet, user, user_targets

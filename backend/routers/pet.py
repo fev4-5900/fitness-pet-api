@@ -1,3 +1,5 @@
+# Endpoints for the user's virtual pet: create, read, edit and delete.
+# Each user can only own one pet.
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from pydantic import BaseModel, Field
 from models import pet

@@ -1,3 +1,5 @@
+# SQLAlchemy models - one Python class per database table.
+# Each class below maps directly to the table named in __tablename__.
 from database import Base
 from sqlalchemy import Column, Integer, ForeignKey, Boolean, String, Float, DateTime, Date
 
