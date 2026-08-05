@@ -1,6 +1,6 @@
 # FitPet
 
-[![Live](https://img.shields.io/badge/live-https%3A%2F%2Ffitness-pet-api.onrender.com-2ea44f)](https://fitness-pet-api.onrender.com)
+[![Live Demo](https://img.shields.io/badge/FitPet-Live%20Demo-2ea44f)](https://fitness-pet-api.onrender.com)
 
 A gamified fitness companion **backend API** — the kind of project that turns daily fitness habits (meals, water, sleep, steps) into a game where your pixel-art pet grows as you hit your targets. Try it live: **https://fitness-pet-api.onrender.com**
 
