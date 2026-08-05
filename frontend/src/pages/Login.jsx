@@ -33,7 +33,7 @@ export default function Login() {
         </Scene>
       </div>
       <div className="auth-panel panel">
-        <h1 className="pixel-title">CHINCHILLA<br />FIT</h1>
+        <h1 className="pixel-title">FIT PET</h1>
         <p className="sub">your cozy pixel workout buddy</p>
         <form onSubmit={submit} className="stack">
           <label className="field">

@@ -1,4 +1,4 @@
-# Chinchilla Fit - Cozy Pixel Gym
+# FIT PET
 
 A gamified fitness companion app. Create your own pixel-art chinchilla pet, log your meals, water, sleep and steps every day, and watch your pet grow as you hit your daily targets.
 
