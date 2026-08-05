@@ -1,33 +1,53 @@
-# FIT PET
+# FitPet
 
-A gamified fitness companion app. Create your own pixel-art chinchilla pet, log your meals, water, sleep and steps every day, and watch your pet grow as you hit your daily targets.
+A gamified fitness companion **backend API** — the kind of project that turns daily fitness habits (meals, water, sleep, steps) into a game where your pixel-art pet grows as you hit your targets.
 
-The app combines a **React (Vite)** frontend with a **FastAPI** backend. In production the backend serves the built frontend, so the whole app runs as a single service.
+**This is primarily a backend project.** The FastAPI backend (auth, database, scoring engine, target calculator, logging API) is hand-built. A lightweight React frontend was added with the help of AI simply to showcase and exercise the API — the logic and data lives in the backend.
 
-## Features
+## What's in the backend
 
-- **Virtual pet** - create one pixel-art chinchilla per account and keep it happy by staying on track
-- **Daily targets** - science-based recommendations (calories, macros, water, sleep, steps) calculated from your profile
-- **Activity log** - track meals, water, sleep and steps, one entry at a time
-- **Daily score (out of 100)** - each category is graded against your targets
-- **Levels** - lifetime points accumulate and level your pet up
-- **Auth** - JWT login with bcrypt password hashing
-- **Pixel-art UI** - cozy fireplace / library / gym theme with a custom-drawn chinchilla sprite
+### REST API (FastAPI + SQLAlchemy + Pydantic v2)
+- Modular **router architecture**: `auth`, `user`, `pet`, `targets`, `points`, plus a `logs/` subpackage for meals, water, sleep and steps
+- Typed request/response models with `Annotated` dependencies (Pydantic v2 style)
+- Per-router `get_db()` / `db_dependency` / `user_dependency` boilerplate
+- SQLAlchemy ORM models — one table per entity (`user`, `pet`, `user_targets`, `meals`, `water`, `sleep_hours`, `steps`, `overall_points`)
+- SQLite for local development, PostgreSQL via `DATABASE_URL` for production
+
+### Authentication
+- JWT (HS256, 20-minute expiry) signed with a **`SECRET_KEY` read from the environment**, never committed
+- Passwords hashed with **bcrypt** (plain text is never stored)
+- Server-side validation: passwords require 6+ characters, usernames/emails must be unique (duplicates return `400`)
+- Every protected endpoint validates the token and ownership (returns `401` otherwise)
+- **Rate limiting on login** (`slowapi`, 5 attempts/minute per IP) to block brute-force password guessing, with a friendly `429` message
+
+### Gamification engine
+- **Daily score out of 100** — calories (±200/±300 window), protein, sleep, steps and water are each graded against the user's saved targets
+- **Pet mood** — `sad` / `ok` / `happy` based on the daily score
+- **Lifetime points + 10 levels** — a delta-tracking system that adds only the *change* in today's score to the user's lifetime total after every log
+
+### Targets calculator
+- Science-based daily recommendations (Mifflin-St Jeor BMR → TDEE → goal-adjusted calories → macro split → water/steps goals) computed from the user's fitness profile
+
+### Single-service deployment
+- The backend serves the built React app from `frontend/dist`, so the whole project deploys as **one service** with no CORS setup
+
+## Frontend (AI-assisted)
+
+A small React (Vite) app — login, register, dashboard, logging and targets screens — built with the help of AI to demonstrate the API. It talks to the backend through `/api` (proxied to port 8000 in development, same-origin in production).
 
 ## Tech Stack
 
 | Layer      | Technology                                      |
 | ---------- | ----------------------------------------------- |
-| Frontend   | React 19, Vite, react-router-dom                |
-| Backend    | FastAPI, SQLAlchemy, Pydantic v2                |
-| Database   | SQLite (local) or PostgreSQL (production)       |
-| Auth       | JWT (python-jose), bcrypt (passlib)             |
+| Backend    | FastAPI, SQLAlchemy, Pydantic v2, python-jose, passlib/bcrypt, slowapi |
+| Database   | SQLite (local) / PostgreSQL (production)        |
+| Frontend   | React 19, Vite, react-router-dom (AI-assisted)  |
 
 ## Project Structure
 
 ```
 fitness-pet-api/
-├── backend/                  # FastAPI application
+├── backend/                  # FastAPI application (the main work)
 │   ├── main.py               # App entry point (also serves the built frontend)
 │   ├── config.py             # Environment-variable config (SECRET_KEY, DATABASE_URL)
 │   ├── database.py           # Database engine / session setup
@@ -35,13 +55,13 @@ fitness-pet-api/
 │   ├── requirements.txt      # Pinned Python dependencies
 │   ├── .env.example          # Template for environment variables
 │   └── routers/
-│       ├── auth.py           # Register / login / JWT handling
+│       ├── auth.py           # Register / login / JWT handling + rate limiting
 │       ├── user.py           # Fitness profile
-│       ├── pet.py            # Pet CRUD
+│       ├── pet.py            # Pet CRUD (one pet per user)
 │       ├── targets.py        # Recommended + saved daily targets
 │       ├── points.py         # Daily score + lifetime level calculation
 │       └── logs/             # meals, water, sleep, steps
-└── frontend/                 # React / Vite app
+└── frontend/                 # React / Vite app (AI-assisted showcase)
     ├── vite.config.js        # Dev proxy: /api -> http://localhost:8000
     └── src/
         ├── api.js            # API helper + token handling
@@ -54,9 +74,8 @@ fitness-pet-api/
 ### Prerequisites
 
 - Python 3.11+
-- Node.js 18+
 
-### 1. Run the backend
+### Run the backend
 
 ```bash
 cd backend
@@ -80,9 +99,9 @@ Start the server:
 python -m uvicorn main:app --reload --port 8000
 ```
 
-The API (with interactive docs) is now at `http://localhost:8000/docs`.
+The API (with interactive Swagger docs) is now at `http://localhost:8000/docs`.
 
-### 2. Run the frontend (development)
+### Run the frontend (development only)
 
 ```bash
 cd frontend
@@ -90,14 +109,14 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. In development the Vite server proxies `/api` requests to the backend, so no CORS setup is needed.
+Open `http://localhost:5173`. In development the Vite server proxies `/api` requests to the backend.
 
 ## Environment Variables
 
 | Variable        | Required | Default                | Description                                     |
 | --------------- | -------- | ---------------------- | ----------------------------------------------- |
 | `SECRET_KEY`    | Yes      | -                      | Signs/verifies JWT tokens. Generate a long random string. |
-| `DATABASE_URL`  | No       | `sqlite:///./fitness-pet.db` | Full database URL. Set to a PostgreSQL URL in production so data survives redeploys. |
+| `DATABASE_URL`  | No       | `sqlite:///./fitness-pet.db` | Full database URL. Set to a PostgreSQL URL in production so user data survives redeploys. |
 
 ## API Reference
 
@@ -106,7 +125,7 @@ Interactive docs are available at `/docs`. Main endpoints:
 | Method   | Path                       | Description                         |
 | -------- | -------------------------- | ----------------------------------- |
 | POST     | `/auth/creat_user`         | Register a new account              |
-| POST     | `/auth/token`              | Login, returns a bearer JWT         |
+| POST     | `/auth/token`              | Login (rate-limited), returns a bearer JWT |
 | GET      | `/user/profile`            | Read fitness profile                |
 | PUT      | `/user/edit_profile`       | Update fitness profile              |
 | GET      | `/pet/read_pet_info`       | Read your pet                       |
@@ -115,7 +134,7 @@ Interactive docs are available at `/docs`. Main endpoints:
 | DELETE   | `/pet/delete`              | Delete your pet                     |
 | GET      | `/targets/recommended`     | Recommended targets from your profile |
 | GET      | `/targets/read_targets`    | Read your saved targets             |
-| POST     | `/targets/add_targets`     | Save your targets                   |
+| POST      | `/targets/add_targets`     | Save your targets                   |
 | GET      | `/points/daily`            | Today's score (out of 100) + mood   |
 | GET      | `/points/total`            | Lifetime points + level             |
 | POST     | `/meals/log_meals`         | Log a meal                          |
@@ -125,9 +144,9 @@ Interactive docs are available at `/docs`. Main endpoints:
 
 Every protected endpoint expects `Authorization: Bearer <token>`.
 
-## Deployment (Render)
+## Deployment (Render + Neon)
 
-The backend serves the built frontend from `frontend/dist`, so the whole app deploys as one service.
+The backend serves the built frontend from `frontend/dist`, so the whole project deploys as **one web service**.
 
 1. Push this repo to GitHub and connect it to a new Render **Web Service**.
 2. Set the following:
@@ -137,15 +156,22 @@ The backend serves the built frontend from `frontend/dist`, so the whole app dep
    | Build command   | `cd frontend && npm ci && npm run build`    |
    | Start command   | `cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT` |
    | Runtime         | Python 3.11                                 |
-   | `SECRET_KEY`    | your random secret                          |
 
-3. (Optional but recommended) Add a Render PostgreSQL database and set `DATABASE_URL` to its connection string, so user data survives redeploys. Without it the app uses a SQLite file on the server, which is wiped on every new deploy.
+3. Create a free PostgreSQL database on **Neon** (`neon.tech`), copy its connection string, and set two environment variables on the Render service:
+
+   | Key            | Value                    |
+   | -------------- | ------------------------ |
+   | `SECRET_KEY`   | your random secret       |
+   | `DATABASE_URL` | the Neon connection string |
+
+Why PostgreSQL? Render's free tier wipes the server disk on every redeploy, so an SQLite file loses all user accounts each time. PostgreSQL lives on a separate server, so data survives redeploys — even if you ever move the app to another host, pointing at the same `DATABASE_URL` brings every account back.
 
 ## Security Notes
 
-- `SECRET_KEY` is read from the environment, never committed. Keep `backend/.env` out of git (it is ignored).
+- `SECRET_KEY` and `DATABASE_URL` are read from the environment, never committed. Keep `backend/.env` out of git (it is ignored).
 - Passwords are hashed with bcrypt; plain-text passwords are never stored.
-- Passwords require a minimum of 6 characters and usernames/emails must be unique (duplicates return `400`).
+- Passwords require a minimum of 6 characters; usernames/emails must be unique (duplicates return `400`).
+- Login is rate-limited (5 attempts/minute per IP) against brute-force attacks.
 - The database file and any `.env` files are ignored by git - never force-add them.
 
 ## License
