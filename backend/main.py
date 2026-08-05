@@ -3,12 +3,12 @@
 # serves the React app from frontend/dist on the same server.
 from pathlib import Path
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from database import engine, Base
 from routers import pet, auth, user, targets, points
 from routers.logs import water, sleep, meals, steps
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
@@ -20,7 +20,17 @@ app = FastAPI()
 # Keyed by the visitor's IP address.
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+# Friendly message when the rate limit is hit (instead of slowapi's default body)
+async def rate_limit_handler(request, exc):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many login attempts. Please wait a minute and try again."},
+    )
+
+
+app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 
 # Create all database tables that don't exist yet (pet, user, targets, logs...)
 Base.metadata.create_all(bind=engine)

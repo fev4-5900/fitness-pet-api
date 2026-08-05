@@ -35,7 +35,7 @@ async function request(path, { method = 'GET', body, headers = {}, auth = true }
   }
 
   if (!res.ok) {
-    const detail = (data && (data.detail || data.message)) || res.statusText
+    const detail = (data && (data.detail || data.message || data.error)) || res.statusText
     throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail))
   }
   return data
